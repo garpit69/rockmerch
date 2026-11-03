@@ -1,0 +1,17 @@
+Options -Indexes
+RewriteEngine On
+<IfModule mod_mime.c>
+  AddType application/manifest+json .webmanifest
+</IfModule>
+RewriteCond %{HTTPS} !=on
+RewriteCond %{HTTP_HOST} !^(localhost|127\.0\.0\.1)(:\d+)?$ [NC]
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L,NE]
+RewriteRule ^admin/?$ admin.php [L,QSA]
+RewriteRule ^(?:storage|\.git)(?:/|$) - [F,L]
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains" env=HTTPS
+</IfModule>

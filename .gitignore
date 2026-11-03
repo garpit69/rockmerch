@@ -1,0 +1,21 @@
+# Rahasia dan konfigurasi lokal
+.env
+.env.*
+!.env.example
+
+# Database, backup, dan data runtime lokal
+/storage/*
+!/storage/.htaccess
+!/storage/uploads/
+/storage/uploads/*
+!/storage/uploads/.htaccess
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.log
+
+# Backup aplikasi
+/storage/backups/
