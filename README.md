@@ -27,6 +27,31 @@ Vercel do not run this PHP/SQLite application as-is; using either requires a
 backend and database migration first. Do not upload the local SQLite database
 or customer/order data as part of a static-site deployment.
 
+## Netlify migration branch
+
+The `migration/netlify` branch contains the initial Vite/React and Netlify
+Functions scaffold. The current preview only includes the storefront shell, a
+read-only published-product endpoint, and a database health endpoint. It is
+not a replacement for the PHP storefront yet; admin, checkout, orders,
+payments, media uploads, and email still need to be migrated and tested.
+
+To run this branch locally:
+
+1. Install Node.js, then run `npm install` from the project root.
+2. Copy `.env.example` to `.env` and set `DATABASE_URL` to the Neon **staging**
+   connection string. Never commit `.env` or paste the connection string into
+   chat.
+3. Apply `database/001_initial_schema.sql` to the empty staging database using
+   the Neon SQL Editor. Do not run it against production or import the local
+   SQLite database at this stage.
+4. Run `npm run dev` and open `http://localhost:8888`. This builds the
+   frontend first, then serves it alongside the local Netlify Functions. Check
+   `http://localhost:8888/api/health` for the database connection.
+5. Run `npm run build` to verify the deployable frontend bundle.
+
+Netlify deployment should wait until the remaining features are ported and the
+staging version passes end-to-end testing.
+
 ## Initial admin setup
 
 The first admin account can only be created from the server terminal. From the

@@ -1,0 +1,22 @@
+{
+  "name": "rockmerch-netlify",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "npm run build && netlify dev",
+    "dev:vite": "vite --config web/vite.config.js",
+    "build": "vite build --config web/vite.config.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.0.2",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^5.0.2",
+    "netlify-cli": "^27.16.2",
+    "vite": "^7.1.7"
+  }
+}

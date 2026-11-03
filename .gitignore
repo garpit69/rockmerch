@@ -2,6 +2,10 @@
 .env
 .env.*
 !.env.example
+node_modules/
+web/dist/
+.netlify/
+npm-debug.log*
 
 # Database, backup, dan data runtime lokal
 /storage/*
