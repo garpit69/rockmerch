@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { storeSettingDefaults } from '../../lib/store-settings.mjs';
 import { money } from './store.js';
 
@@ -13,6 +13,28 @@ export function AdminOverview({ data, onNavigate }) {
         <article><span>PRODUK AKTIF</span><strong>{data.product_count}</strong><button type="button" onClick={() => onNavigate('products')}>Kelola produk ↗</button></article>
         <article><span>ARTIKEL</span><strong>{data.article_count}</strong><button type="button" onClick={() => onNavigate('articles')}>Kelola artikel ↗</button></article>
         <article><span>ULASAN MENUNGGU</span><strong>{data.pending_review_count}</strong><button type="button" onClick={() => onNavigate('reviews')}>Moderasi ↗</button></article>
+      </section>
+      <section className="migration-admin-shortcuts" aria-label="Aksi cepat">
+        <button type="button" onClick={() => onNavigate('orders')}>
+          <span aria-hidden="true">↗</span>
+          <h2>Pesanan</h2>
+          <p>{data.new_order_count} menunggu tindakan · pantau status dan pengiriman.</p>
+        </button>
+        <button type="button" onClick={() => onNavigate('products')}>
+          <span aria-hidden="true">＋</span>
+          <h2>Tambah produk</h2>
+          <p>Catat rilisan baru yang baru mendarat.</p>
+        </button>
+        <button type="button" onClick={() => onNavigate('new-article')}>
+          <span aria-hidden="true">✎</span>
+          <h2>Tulis artikel</h2>
+          <p>Ceritakan hal seru di antara track.</p>
+        </button>
+        <a href="/" target="_blank" rel="noreferrer">
+          <span aria-hidden="true">↗</span>
+          <h2>Lihat toko</h2>
+          <p>Cek tampilan terbaru dari sisi pengunjung.</p>
+        </a>
       </section>
       <div className="migration-admin-content">
         <section className="migration-admin-list">
@@ -46,10 +68,25 @@ const emptyArticle = {
   publish_at: '',
 };
 
-export function AdminArticles({ articles, onSave, onDelete, saving }) {
+export function AdminArticles({
+  articles,
+  onSave,
+  onDelete,
+  saving,
+  createRequest = 0,
+  onCreateRequestHandled,
+}) {
   const [form, setForm] = useState(emptyArticle);
   const [editingId, setEditingId] = useState(null);
   const [showForm, setShowForm] = useState(false);
+
+  useEffect(() => {
+    if (createRequest === 0) return;
+    setEditingId(null);
+    setForm(emptyArticle);
+    setShowForm(true);
+    onCreateRequestHandled();
+  }, [createRequest, onCreateRequestHandled]);
 
   const edit = (article) => {
     setEditingId(article.id);

@@ -35,7 +35,8 @@ export default function AdminPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
-  const [tab, setTab] = useState('products');
+  const [tab, setTab] = useState('overview');
+  const [theme, setTheme] = useState(() => document.documentElement.dataset.theme || 'light');
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [articles, setArticles] = useState([]);
@@ -49,6 +50,7 @@ export default function AdminPage() {
   const [productForm, setProductForm] = useState(emptyProduct);
   const [editingProductId, setEditingProductId] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [articleCreateRequest, setArticleCreateRequest] = useState(0);
 
   const loadAdminData = useCallback(async (currentUser) => {
     const paths = ['/api/admin/products', '/api/admin/articles'];
@@ -100,6 +102,7 @@ export default function AdminPage() {
           return;
         }
         setUser(currentUser);
+        setTab(currentUser.role === 'admin' ? 'overview' : 'products');
         await loadAdminData(currentUser);
         if (active) setAuthState('signed-in');
       })
@@ -127,6 +130,7 @@ export default function AdminPage() {
       if (!response.ok) throw new Error(body.error || 'Tidak dapat masuk.');
       setUser(body.user);
       setPassword('');
+      setTab(body.user.role === 'admin' ? 'overview' : 'products');
       await loadAdminData(body.user);
       setAuthState('signed-in');
     } catch (requestError) {
@@ -154,7 +158,7 @@ export default function AdminPage() {
       setAnalytics(null);
       setActivities([]);
       setCurrentUserId(null);
-      setTab('products');
+      setTab('overview');
       setNotice('');
       setAuthState('signed-out');
     } catch (requestError) {
@@ -441,8 +445,8 @@ export default function AdminPage() {
     ? [
       ['overview', 'Ringkasan'],
       ['products', `Produk (${products.length})`],
-      ['orders', `Pesanan (${orders.length})`],
       ['articles', `Artikel (${articles.length})`],
+      ['orders', `Pesanan (${orders.length})`],
       ['reviews', `Ulasan (${reviews.length})`],
       ['settings', 'Pengaturan'],
       ['users', 'Akun staf'],
@@ -454,6 +458,35 @@ export default function AdminPage() {
       ['products', `Produk (${products.length})`],
       ['articles', `Artikel (${articles.length})`],
     ];
+  const tabTitles = {
+    overview: 'Ringkasan toko',
+    products: 'Produk',
+    articles: 'Artikel & Liner Notes',
+    orders: 'Pesanan',
+    reviews: 'Ulasan',
+    settings: 'Pengaturan situs',
+    users: 'Akun staf',
+    analytics: 'Analitik',
+    backup: 'Backup dan pemulihan',
+    activity: 'Aktivitas admin',
+  };
+  const toggleTheme = () => {
+    const nextTheme = theme === 'dark' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = nextTheme;
+    localStorage.setItem('rm-theme', nextTheme);
+    setTheme(nextTheme);
+  };
+  const navigateOverview = (destination) => {
+    if (destination === 'new-article') {
+      setTab('articles');
+      setArticleCreateRequest((request) => request + 1);
+      return;
+    }
+    setTab(destination);
+  };
+  const acknowledgeArticleCreate = useCallback(() => {
+    setArticleCreateRequest(0);
+  }, []);
 
   if (authState === 'loading') {
     return <main className="migration-commerce-page"><p role="status">Memeriksa sesi admin…</p></main>;
@@ -473,52 +506,74 @@ export default function AdminPage() {
 
   if (authState === 'signed-out') {
     return (
-      <main className="migration-commerce-page migration-admin-login">
-        <a className="back-link" href="/">← Kembali ke toko</a>
-        <span className="eyebrow">RUANG KERJA ROCKMERCH</span>
-        <h1>Masuk ke ruang kerja.</h1>
-        <p>Gunakan akun admin atau editor yang dibuat oleh admin toko.</p>
-        {error && <p className="migration-state migration-state-error" role="alert">{error}</p>}
-        <form className="checkout-form" onSubmit={signIn}>
-          <label>Email
-            <input type="email" autoComplete="username" required value={email} onChange={(event) => setEmail(event.target.value)} />
-          </label>
-          <label>Kata sandi
-            <input type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} />
-          </label>
-          <button className="button button-dark" disabled={saving}>
-            {saving ? 'Memeriksa…' : 'Masuk'}
-          </button>
-        </form>
-        <a className="back-link" href="/?page=admin-reset">Lupa kata sandi?</a>
+      <main className="migration-admin-login-page">
+        <a className="brand login-brand" href="/" aria-label="Rock Merch — kembali ke toko">
+          <img className="brand-logo-default" src="/assets/brand/rockmerch-wordmark.png" alt="Rock Merch" />
+        </a>
+        <section className="migration-admin-login-card">
+          <span className="eyebrow">HALO LAGI</span>
+          <h1>Masuk ke ruang kerja.</h1>
+          <p>Rak dan cerita menunggu sentuhanmu.</p>
+          {error && <p className="migration-admin-error" role="alert">{error}</p>}
+          <form className="migration-admin-login-form" onSubmit={signIn}>
+            <label>Email
+              <input type="email" autoComplete="username" required value={email} onChange={(event) => setEmail(event.target.value)} />
+            </label>
+            <label>Kata sandi
+              <input type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} />
+            </label>
+            <button className="button button-dark" disabled={saving}>
+              {saving ? 'Memeriksa…' : 'Masuk'}
+            </button>
+          </form>
+          <a className="back-link" href="/?page=admin-reset">Lupa kata sandi?</a>
+          <a className="back-link" href="/">Kembali ke toko</a>
+        </section>
       </main>
     );
   }
 
   return (
-    <main className="migration-commerce-page migration-admin-page">
-      <header className="migration-admin-header">
-        <div>
-          <span className="eyebrow">RUANG KERJA ROCKMERCH</span>
-          <h1>Halo, {user.email}</h1>
+    <div className="migration-admin-shell">
+      <aside className="migration-admin-sidebar" aria-label="Navigasi ruang kerja">
+        <a className="brand" href="/" aria-label="Rock Merch — kembali ke toko">
+          <img className="brand-logo-default" src="/assets/brand/rockmerch-wordmark.png" alt="Rock Merch" />
+        </a>
+        <span className="eyebrow">MENU</span>
+        <nav className="migration-admin-nav" aria-label="Menu admin">
+          {tabs.map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              aria-current={tab === value ? 'page' : undefined}
+              onClick={() => setTab(value)}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
+        <div className="migration-admin-sidebar-bottom">
+          <a href="/">Lihat toko <span aria-hidden="true">↗</span></a>
+          <span className="migration-admin-account">{user.email} · {user.role === 'admin' ? 'admin' : 'editor'}</span>
+          <button type="button" onClick={signOut} disabled={saving}>Keluar</button>
         </div>
-        <button className="button button-outline" type="button" onClick={signOut} disabled={saving}>
-          Keluar
-        </button>
-      </header>
-      <nav className="migration-admin-tabs" aria-label="Menu admin">
-        {tabs.map(([value, label]) => (
-          <button key={value} type="button" aria-pressed={tab === value} onClick={() => setTab(value)}>
-            {label}
+      </aside>
+      <main className="migration-admin-main">
+        <header className="migration-admin-top">
+          <div>
+            <span className="eyebrow">RUANG KERJA / {(tabTitles[tab] || 'Admin').toLocaleUpperCase('id-ID')}</span>
+            <h1>{tabTitles[tab] || 'Admin'}</h1>
+          </div>
+          <button className="button button-outline migration-admin-theme" type="button" onClick={toggleTheme} aria-label="Ganti tema">
+            Tema
           </button>
-        ))}
-      </nav>
-      {error && <p className="migration-state migration-state-error" role="alert">{error}</p>}
-      {notice && <p className="migration-cart-notice" role="status">{notice}</p>}
+        </header>
+        {error && <p className="migration-admin-error" role="alert">{error}</p>}
+        {notice && <p className="migration-cart-notice" role="status">{notice}</p>}
 
-      {tab === 'overview' && user.role === 'admin' && (
-        <AdminOverview data={overview} onNavigate={setTab} />
-      )}
+        {tab === 'overview' && user.role === 'admin' && (
+          <AdminOverview data={overview} onNavigate={navigateOverview} />
+        )}
 
       {tab === 'products' && (
         <div className="migration-admin-content">
@@ -744,7 +799,14 @@ export default function AdminPage() {
       )}
 
       {tab === 'articles' && (
-        <AdminArticles articles={articles} onSave={saveArticle} onDelete={deleteArticle} saving={saving} />
+        <AdminArticles
+          articles={articles}
+          onSave={saveArticle}
+          onDelete={deleteArticle}
+          saving={saving}
+          createRequest={articleCreateRequest}
+          onCreateRequestHandled={acknowledgeArticleCreate}
+        />
       )}
 
       {tab === 'reviews' && user.role === 'admin' && (
@@ -773,7 +835,7 @@ export default function AdminPage() {
       {tab === 'activity' && user.role === 'admin' && (
         <AdminActivity activities={activities} />
       )}
-      <a className="back-link" href="/">← Kembali ke toko</a>
-    </main>
+      </main>
+    </div>
   );
 }
