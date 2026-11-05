@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $code = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
                     $expires = $now + 900;
 
-                    // Only the newest code remains usable; a new request invalidates earlier codes.
+                    // A new request invalidates earlier codes for this account.
                     $invalidate = $db->prepare('UPDATE password_resets SET used_at=? WHERE user_id=? AND used_at IS NULL');
                     $invalidate->execute([$now, (int)$user['id']]);
 
@@ -64,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
-            // Keep the response identical for known and unknown addresses.
+            // Use the same response for known and unknown addresses.
             $message = 'Jika email terdaftar dan layanan email tersedia, kode verifikasi akan dikirim. Kode berlaku 15 menit.';
         } elseif ($action === 'verify') {
             $email = strtolower(trim((string)($_POST['email'] ?? '')));
@@ -100,7 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $resetQuery->execute([(int)$user['id'], time()]);
                 $reset = $resetQuery->fetch();
                 if (!$reset || (int)$reset['attempts'] >= 5) {
-                    if ($db->inTransaction()) $db->commit();
+                    $db->commit();
                     throw new RuntimeException('Kode tidak valid atau sudah kedaluwarsa. Minta kode baru.');
                 }
 
