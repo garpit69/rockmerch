@@ -43,12 +43,23 @@ $db->exec("
         password TEXT NOT NULL,
         role TEXT NOT NULL DEFAULT 'admin'
     );
+    CREATE TABLE password_resets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        token_hash TEXT NOT NULL,
+        expires_at INTEGER NOT NULL,
+        used_at INTEGER
+    );
 ");
 $applied = apply_migrations($db, __DIR__ . '/../migrations');
-assert_same(['001_legacy_baseline', '002_email_outbox', '003_transfer_bank_snapshot'], $applied, 'All new migrations should apply.');
+assert_same(['001_legacy_baseline', '002_email_outbox', '003_transfer_bank_snapshot', '004_password_reset_email_code'], $applied, 'All new migrations should apply.');
 assert_same([], apply_migrations($db, __DIR__ . '/../migrations'), 'Migrations should be idempotent.');
+$resetColumns = array_column($db->query('PRAGMA table_info(password_resets)')->fetchAll(), 'name');
+foreach (['code_hash', 'attempts', 'requested_at'] as $column) {
+    assert_same(true, in_array($column, $resetColumns, true), 'Password reset schema should include ' . $column . '.');
+}
 
-$db->exec("INSERT INTO orders(id,order_number,customer_name,email,status,subtotal,shipping,total,shipping_carrier,tracking_number,tracking_url) VALUES(1,'RM-261102-ABCDEF0123456789ABCDEF0123456789','Pelanggan','user@example.com','shipped',100000,15000,115000,'Kurir','RESI123','https://tracking.example/resi')");
+$db->exec("INSERT INTO orders(id,order_number,customer_name,email,status,subtotal,shipping,total,shipping_carrier,tracking_number,tracking_url) VALUES(1,'RM-261102-ABCDEF0123456789ABCDEF0123456789','Test Customer','user@example.com','shipped',100000,10000,110000,'JNE','RESI123','https://tracking.example/resi')");
 $db->exec("INSERT INTO order_items(id,order_id,title,format,quantity,unit_price) VALUES(1,1,'Album Uji','Vinyl',1,100000)");
 $bankSnapshot = $db->query('SELECT transfer_bank_code,transfer_bank_account,transfer_account_name FROM orders WHERE id=1')->fetch();
 assert_same(['transfer_bank_code' => '', 'transfer_bank_account' => '', 'transfer_account_name' => ''], $bankSnapshot, 'Existing orders should receive empty transfer snapshots.');
